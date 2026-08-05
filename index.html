@@ -11,69 +11,69 @@
   <!-- SheetJS para leer y descargar archivos Excel -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
-<body class="bg-gray-100 min-h-screen p-4 font-sans">
+<body class="bg-gray-100 min-h-screen p-2 sm:p-4 font-sans">
 
-  <div class="max-w-6xl mx-auto space-y-6">
+  <div class="max-w-6xl mx-auto space-y-4 sm:space-y-6">
     
     <!-- Encabezado -->
-    <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-red-600 flex justify-between items-center">
+    <div class="bg-white p-4 sm:p-6 rounded-lg shadow-md border-l-4 border-red-600 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
       <div>
-        <h1 class="text-2xl font-bold text-gray-800">Registros de Productos Caducados</h1>
-        <p class="text-sm text-gray-500">Escanea los productos, cantidad y detalles.</p>
+        <h1 class="text-xl sm:text-2xl font-bold text-gray-800">Registros de Productos Caducados</h1>
+        <p class="text-xs sm:text-sm text-gray-500">Escanea los productos, cantidad y detalles.</p>
       </div>
-      <div id="status-db" class="text-xs px-3 py-1 rounded-full bg-yellow-100 text-yellow-800 font-semibold">
+      <div id="status-db" class="text-xs px-3 py-1 rounded-full bg-yellow-100 text-yellow-800 font-semibold self-start sm:self-auto">
         Conectando a Firebase...
       </div>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
       
       <!-- Columna Izquierda: Carga Excel y Formulario de Registro -->
-      <div class="space-y-6">
+      <div class="space-y-4 sm:space-y-6">
         
         <!-- Paso 1: Carga de Excel -->
-        <div class="bg-white p-5 rounded-lg shadow-md border border-gray-200">
-          <h2 class="font-bold text-gray-700 text-lg mb-2">1. Cargar base de datos</h2>
-          <input type="file" id="excel-file" accept=".xlsx, .xls" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100 cursor-pointer"/>
+        <div class="bg-white p-4 sm:p-5 rounded-lg shadow-md border border-gray-200">
+          <h2 class="font-bold text-gray-700 text-base sm:text-lg mb-2">1. Cargar base de datos</h2>
+          <input type="file" id="excel-file" accept=".xlsx, .xls" class="block w-full text-xs sm:text-sm text-gray-500 file:mr-2 sm:file:mr-4 file:py-2 file:px-3 sm:file:px-4 file:rounded-md file:border-0 file:text-xs sm:file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100 cursor-pointer"/>
           <p id="excel-status" class="text-xs mt-2 font-medium text-gray-500">Cargando base de datos...</p>
         </div>
 
         <!-- Paso 2: Formulario de Captura -->
-        <div class="bg-white p-5 rounded-lg shadow-md border border-gray-200">
-          <h2 class="font-bold text-gray-700 text-lg mb-4">2. Registrar Producto</h2>
+        <div class="bg-white p-4 sm:p-5 rounded-lg shadow-md border border-gray-200">
+          <h2 class="font-bold text-gray-700 text-base sm:text-lg mb-4">2. Registrar Producto</h2>
           
           <form id="registro-form" class="space-y-4">
             <div>
               <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Código del Producto</label>
-              <input type="text" id="codigo-input" placeholder="escribe el código" required 
-                class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-red-500 focus:outline-none font-mono text-lg uppercase" autocomplete="off"/>
+              <input type="number" id="codigo-input" inputmode="numeric" pattern="[0-9]*" placeholder="escribe el código" required 
+                class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-red-500 focus:outline-none font-mono text-base sm:text-lg uppercase" autocomplete="off"/>
             </div>
 
             <div>
               <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Descripción del Producto</label>
               <input type="text" id="descripcion-input" placeholder="Sin información" readonly 
-                class="w-full p-2 bg-gray-100 border border-gray-300 rounded font-semibold text-gray-700 text-sm"/>
+                class="w-full p-2 bg-gray-100 border border-gray-300 rounded font-semibold text-gray-700 text-xs sm:text-sm"/>
             </div>
 
             <div>
               <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Ubicación</label>
               <input type="text" id="caja-input" placeholder="Sin información" readonly 
-                class="w-full p-2 bg-gray-100 border border-gray-300 rounded font-bold text-gray-700"/>
+                class="w-full p-2 bg-gray-100 border border-gray-300 rounded font-bold text-gray-700 text-xs sm:text-sm"/>
             </div>
 
             <div>
               <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Cantidad Caducada</label>
-              <input type="number" id="cantidad-input" min="1" placeholder="Ej. 5" required 
-                class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-red-500 focus:outline-none"/>
+              <input type="number" id="cantidad-input" min="1" inputmode="numeric" pattern="[0-9]*" placeholder="Ej. 5" required 
+                class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-red-500 focus:outline-none text-xs sm:text-base"/>
             </div>
 
             <div>
               <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Detalles / Observación</label>
               <textarea id="detalle-input" rows="2" placeholder="Opcional: Lote, motivo, etc." 
-                class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-red-500 focus:outline-none"></textarea>
+                class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-red-500 focus:outline-none text-xs sm:text-base"></textarea>
             </div>
 
-            <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded transition duration-150 shadow">
+            <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 px-4 rounded transition duration-150 shadow text-sm sm:text-base">
               Guardar Registro
             </button>
           </form>
@@ -82,35 +82,35 @@
       </div>
 
       <!-- Columna Derecha: Tabla de Registros en Línea -->
-      <div class="md:col-span-2 bg-white p-5 rounded-lg shadow-md border border-gray-200 flex flex-col">
-        <div class="flex flex-wrap justify-between items-center gap-2 mb-4">
+      <div class="md:col-span-2 bg-white p-4 sm:p-5 rounded-lg shadow-md border border-gray-200 flex flex-col">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
           <div class="flex items-center gap-2">
-            <h2 class="font-bold text-gray-700 text-lg">Registros Guardados</h2>
+            <h2 class="font-bold text-gray-700 text-base sm:text-lg">Registros Guardados</h2>
             <span id="total-registros" class="text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-full font-bold">0 registros</span>
           </div>
 
           <!-- Botones de Acción -->
-          <div class="flex gap-2">
-            <button id="btn-exportar" class="bg-green-600 hover:bg-green-700 text-white text-xs font-bold py-2 px-3 rounded shadow transition">
+          <div class="flex gap-2 w-full sm:w-auto">
+            <button id="btn-exportar" class="flex-1 sm:flex-initial bg-green-600 hover:bg-green-700 text-white text-xs font-bold py-2 px-3 rounded shadow transition">
               📊 Descargar Excel
             </button>
-            <button id="btn-limpiar" class="bg-gray-600 hover:bg-red-600 text-white text-xs font-bold py-2 px-3 rounded shadow transition">
+            <button id="btn-limpiar" class="flex-1 sm:flex-initial bg-gray-600 hover:bg-red-600 text-white text-xs font-bold py-2 px-3 rounded shadow transition">
               🗑️ Limpiar Registros
             </button>
           </div>
         </div>
 
-        <div class="overflow-x-auto flex-1">
-          <table class="w-full text-sm text-left text-gray-600">
+        <div class="overflow-x-auto flex-1 -mx-4 sm:mx-0 px-4 sm:px-0">
+          <table class="w-full text-xs sm:text-sm text-left text-gray-600 min-w-[500px] sm:min-w-full">
             <thead class="text-xs text-gray-700 uppercase bg-gray-100 border-b">
               <tr>
-                <th class="py-3 px-2">Hora</th>
-                <th class="py-3 px-2">Código</th>
-                <th class="py-3 px-2">Descripción</th>
-                <th class="py-3 px-2">Caja</th>
-                <th class="py-3 px-2 text-center">Cant.</th>
-                <th class="py-3 px-2">Detalles</th>
-                <th class="py-3 px-2 text-center">Acción</th>
+                <th class="py-2.5 sm:py-3 px-1.5 sm:px-2">Hora</th>
+                <th class="py-2.5 sm:py-3 px-1.5 sm:px-2">Código</th>
+                <th class="py-2.5 sm:py-3 px-1.5 sm:px-2">Descripción</th>
+                <th class="py-2.5 sm:py-3 px-1.5 sm:px-2">Caja</th>
+                <th class="py-2.5 sm:py-3 px-1.5 sm:px-2 text-center">Cant.</th>
+                <th class="py-2.5 sm:py-3 px-1.5 sm:px-2">Detalles</th>
+                <th class="py-2.5 sm:py-3 px-1.5 sm:px-2 text-center">Acción</th>
               </tr>
             </thead>
             <tbody id="tabla-registros">
@@ -242,6 +242,9 @@
     const descripcionInput = document.getElementById("descripcion-input");
 
     codigoInput.addEventListener("input", function() {
+      // Filtrar estrictamente cualquier carácter que no sea número al escribir o pegar
+      this.value = this.value.replace(/[^0-9]/g, '');
+
       const valOriginal = this.value.trim().toUpperCase();
       const valClave = valOriginal.replace(/[.$#\[\]\/]/g, "_");
 
@@ -314,13 +317,13 @@
         const tr = document.createElement("tr");
         tr.className = "border-b hover:bg-gray-50";
         tr.innerHTML = `
-          <td class="py-2 px-2 text-xs text-gray-500">${item.fechaHora || '-'}</td>
-          <td class="py-2 px-2 font-mono font-bold text-gray-800">${item.codigo}</td>
-          <td class="py-2 px-2 text-gray-700 text-xs">${item.descripcion || '-'}</td>
-          <td class="py-2 px-2 font-semibold text-gray-700">${item.caja}</td>
-          <td class="py-2 px-2 text-center font-bold text-red-600">${item.cantidad}</td>
-          <td class="py-2 px-2 text-gray-600 text-xs">${item.detalles}</td>
-          <td class="py-2 px-2 text-center">
+          <td class="py-2 px-1.5 sm:px-2 text-xs text-gray-500">${item.fechaHora || '-'}</td>
+          <td class="py-2 px-1.5 sm:px-2 font-mono font-bold text-gray-800">${item.codigo}</td>
+          <td class="py-2 px-1.5 sm:px-2 text-gray-700 text-xs">${item.descripcion || '-'}</td>
+          <td class="py-2 px-1.5 sm:px-2 font-semibold text-gray-700">${item.caja}</td>
+          <td class="py-2 px-1.5 sm:px-2 text-center font-bold text-red-600">${item.cantidad}</td>
+          <td class="py-2 px-1.5 sm:px-2 text-gray-600 text-xs">${item.detalles}</td>
+          <td class="py-2 px-1.5 sm:px-2 text-center">
             <button data-id="${item.id}" class="btn-eliminar-item text-red-500 hover:text-red-700 hover:bg-red-50 p-1 rounded transition" title="Eliminar este registro">
               🗑️
             </button>
