@@ -141,6 +141,9 @@
       appId: "1:954583350974:web:94edd583fb19d49ed728ef"
     };
 
+    // Clave de seguridad requerida para eliminar registros
+    const CLAVE_ELIMINAR = "Oriflame2026";
+
     // Inicializar Firebase Realtime Database
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
@@ -242,7 +245,7 @@
     const descripcionInput = document.getElementById("descripcion-input");
 
     codigoInput.addEventListener("input", function() {
-      // Filtrar estrictamente cualquier carácter que no sea número al escribir o pegar
+      // Filtrar strictly cualquier carácter que no sea número al escribir o pegar
       this.value = this.value.replace(/[^0-9]/g, '');
 
       const valOriginal = this.value.trim().toUpperCase();
@@ -336,10 +339,16 @@
       document.querySelectorAll(".btn-eliminar-item").forEach(btn => {
         btn.addEventListener("click", function() {
           const itemKey = this.getAttribute("data-id");
-          if (confirm("¿Estás seguro de que deseas eliminar este registro?")) {
+          const clave = prompt("Ingresa la clave para eliminar este registro:");
+          
+          if (clave === null) return; // Si cancela la ventana
+          
+          if (clave === CLAVE_ELIMINAR) {
             const itemRef = ref(db, `caducados_picking/${itemKey}`);
             remove(itemRef)
               .catch(err => alert("Error al eliminar el registro: " + err.message));
+          } else {
+            alert("Clave incorrecta. No se eliminó el registro.");
           }
         });
       });
@@ -378,12 +387,16 @@
         return;
       }
 
-      const confirmacion = confirm("⚠️ ¿Deseas borrar TODOS los registros acumulados.");
+      const clave = prompt("⚠️ Ingresa la clave para borrar TODOS los registros acumulados:");
       
-      if (confirmacion) {
+      if (clave === null) return; // Si cancela la ventana
+
+      if (clave === CLAVE_ELIMINAR) {
         remove(caducadosRef)
           .then(() => alert("Se han eliminado todos los registros correctamente."))
           .catch(err => alert("Error al borrar registros: " + err.message));
+      } else {
+        alert("Clave incorrecta. No se borraron los registros.");
       }
     });
   </script>
