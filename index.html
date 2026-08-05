@@ -321,7 +321,7 @@
       // Cálculo dinámico de total de registros y unidades
       const totalUnidades = registrosActuales.reduce((acc, curr) => acc + (Number(curr.cantidad) || 0), 0);
       totalEl.textContent = `${registrosActuales.length} registros`;
-      unidadesEl.textContent = `${totalUnidades} uds.`;
+      unidadesEl.textContent = `${totalUnidades} unidades.`;
 
       listaVisual.forEach(item => {
         const tr = document.createElement("tr");
