@@ -154,6 +154,12 @@
         </div>
       </div>
 
+      <!-- Buscador de Código en Historial -->
+      <div class="mb-4">
+        <input type="number" id="buscador-codigo-historial" inputmode="numeric" pattern="[0-9]*" placeholder="🔍 Buscar registro por código..." 
+               class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm shadow-sm transition-shadow"/>
+      </div>
+
       <div class="overflow-x-auto">
         <table class="w-full text-xs sm:text-sm text-left text-gray-600 min-w-[600px] sm:min-w-full">
           <thead class="text-xs text-gray-700 uppercase bg-gray-100 border-b">
@@ -539,7 +545,33 @@
         `;
         tbodyHistorial.appendChild(tr);
       });
+
+      aplicarFiltroBuscadorHistorial();
     });
+
+    // BUSCADOR EN LA TABLA DE HISTORIAL
+    const inputBuscadorHistorial = document.getElementById("buscador-codigo-historial");
+    
+    function aplicarFiltroBuscadorHistorial() {
+      inputBuscadorHistorial.value = inputBuscadorHistorial.value.replace(/[^0-9]/g, '');
+
+      const filtro = inputBuscadorHistorial.value.trim().toUpperCase();
+      const filas = document.querySelectorAll("#tabla-historial tr");
+
+      filas.forEach(fila => {
+        const celdaCodigo = fila.querySelectorAll("td")[1];
+        if (celdaCodigo) {
+          const textoCodigo = celdaCodigo.textContent || celdaCodigo.innerText;
+          if (textoCodigo.toUpperCase().includes(filtro)) {
+            fila.style.display = "";
+          } else {
+            fila.style.display = "none";
+          }
+        }
+      });
+    }
+
+    inputBuscadorHistorial.addEventListener("input", aplicarFiltroBuscadorHistorial);
 
     // DESCARGAR EXCEL SOLO DEL HISTORIAL
     document.getElementById("btn-exportar-historial").addEventListener("click", function() {
