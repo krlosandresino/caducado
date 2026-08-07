@@ -101,6 +101,12 @@
           </div>
         </div>
 
+        <!-- NUEVO: Buscador por Código -->
+        <div class="mb-4">
+          <input type="text" id="buscador-codigo" placeholder="🔍 Buscar registro por código..." 
+                 class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-red-500 focus:outline-none text-sm shadow-sm transition-shadow"/>
+        </div>
+
         <div class="overflow-x-auto flex-1 -mx-4 sm:mx-0 px-4 sm:px-0">
           <table class="w-full text-xs sm:text-sm text-left text-gray-600 min-w-[500px] sm:min-w-full">
             <thead class="text-xs text-gray-700 uppercase bg-gray-100 border-b">
@@ -359,6 +365,9 @@
           }
         });
       });
+
+      // NUEVO: Re-aplicar el filtro en caso de que la tabla se actualice mientras se busca algo
+      aplicarFiltroBuscador();
     });
 
     // 6. DESCARGAR REGISTROS A EXCEL
@@ -406,6 +415,33 @@
         alert("Clave incorrecta. No se borraron los registros.");
       }
     });
+
+    // 8. NUEVO: LÓGICA DEL BUSCADOR EN LA TABLA
+    const inputBuscador = document.getElementById("buscador-codigo");
+    
+    function aplicarFiltroBuscador() {
+      const filtro = inputBuscador.value.trim().toUpperCase();
+      const filas = document.querySelectorAll("#tabla-registros tr");
+
+      filas.forEach(fila => {
+        // Obtenemos la celda correspondiente a la columna 'Código' (índice 1)
+        const celdaCodigo = fila.querySelectorAll("td")[1];
+        
+        if (celdaCodigo) {
+          const textoCodigo = celdaCodigo.textContent || celdaCodigo.innerText;
+          // Mostramos la fila si coincide el código, la ocultamos si no
+          if (textoCodigo.toUpperCase().includes(filtro)) {
+            fila.style.display = "";
+          } else {
+            fila.style.display = "none";
+          }
+        }
+      });
+    }
+
+    // Escuchar el evento de escritura para filtrar en tiempo real
+    inputBuscador.addEventListener("input", aplicarFiltroBuscador);
+
   </script>
 </body>
 </html>
