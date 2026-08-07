@@ -91,9 +91,12 @@
           </div>
 
           <!-- Botones de Acción -->
-          <div class="flex gap-2 w-full sm:w-auto">
+          <div class="flex gap-2 w-full sm:w-auto flex-wrap sm:flex-nowrap">
             <button id="btn-exportar" class="flex-1 sm:flex-initial bg-green-600 hover:bg-green-700 text-white text-xs font-bold py-2 px-3 rounded shadow transition">
               📊 Descargar Excel
+            </button>
+            <button id="btn-guardar-historial" class="flex-1 sm:flex-initial bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-2 px-3 rounded shadow transition">
+              💾 Guardar Historial
             </button>
             <button id="btn-limpiar" class="flex-1 sm:flex-initial bg-gray-600 hover:bg-red-600 text-white text-xs font-bold py-2 px-3 rounded shadow transition">
               🗑️ Limpiar Registros
@@ -101,7 +104,7 @@
           </div>
         </div>
 
-        <!-- NUEVO: Buscador por Código -->
+        <!-- Buscador por Código -->
         <div class="mb-4">
           <input type="number" id="buscador-codigo" inputmode="numeric" pattern="[0-9]*" placeholder="🔍 Buscar registro por código..." 
                  class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-red-500 focus:outline-none text-sm shadow-sm transition-shadow"/>
@@ -130,6 +133,48 @@
       </div>
 
     </div>
+
+    <!-- SECCIÓN INDEPENDIENTE: Historial de Registros Individuales -->
+    <div class="bg-white p-4 sm:p-5 rounded-lg shadow-md border border-gray-200">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4 border-b pb-3">
+        <div class="flex items-center gap-2 flex-wrap">
+          <h2 class="font-bold text-gray-800 text-base sm:text-lg">📜 Historial Guardado</h2>
+          <span id="total-historial-items" class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-bold">0 registros en historial</span>
+          <span id="total-historial-unidades" class="text-xs bg-red-100 text-red-700 px-2 py-1 rounded-full font-bold">0 unidades.</span>
+        </div>
+        
+        <!-- Botones para Historial -->
+        <div class="flex gap-2 w-full sm:w-auto">
+          <button id="btn-exportar-historial" class="flex-1 sm:flex-initial bg-green-600 hover:bg-green-700 text-white text-xs font-bold py-2 px-3 rounded shadow transition">
+            📊 Descargar Excel Historial
+          </button>
+          <button id="btn-eliminar-historial" class="flex-1 sm:flex-initial bg-red-600 hover:bg-red-700 text-white text-xs font-bold py-2 px-3 rounded shadow transition">
+            🗑️ Eliminar Historial
+          </button>
+        </div>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-xs sm:text-sm text-left text-gray-600 min-w-[600px] sm:min-w-full">
+          <thead class="text-xs text-gray-700 uppercase bg-gray-100 border-b">
+            <tr>
+              <th class="py-2.5 sm:py-3 px-1.5 sm:px-2">Hora Registrada</th>
+              <th class="py-2.5 sm:py-3 px-1.5 sm:px-2">Código</th>
+              <th class="py-2.5 sm:py-3 px-1.5 sm:px-2">Descripción</th>
+              <th class="py-2.5 sm:py-3 px-1.5 sm:px-2">Caja</th>
+              <th class="py-2.5 sm:py-3 px-1.5 sm:px-2 text-center">Cant.</th>
+              <th class="py-2.5 sm:py-3 px-1.5 sm:px-2">Detalles</th>
+            </tr>
+          </thead>
+          <tbody id="tabla-historial">
+            <tr>
+              <td colspan="6" class="text-center py-6 text-gray-400">No hay registros.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
   </div>
 
   <!-- Firebase Modular SDK Script -->
@@ -137,7 +182,7 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getDatabase, ref, push, set, remove, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-    // Tu configuración de Firebase
+    // Configuración de Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyClp2tVcoeIE_ZOedIzP6zyEXEoP9Em0tM",
       authDomain: "chatpareja-3fbce.firebaseapp.com",
@@ -158,18 +203,18 @@
     // Referencias a la base de datos
     const maestroRef = ref(db, "maestro_excel");
     const caducadosRef = ref(db, "caducados_picking");
+    const historialRef = ref(db, "historial_picking"); // Referencia independiente para el historial
 
     // Indicador de Estado
     const statusDbEl = document.getElementById("status-db");
     statusDbEl.textContent = "Conectado a la nube";
     statusDbEl.className = "text-xs px-3 py-1 rounded-full bg-green-100 text-green-800 font-semibold";
 
-    // Objeto en memoria para almacenar los productos cargados
     let maestroProductos = {};
-    // Arreglo en memoria para guardar los datos actuales a exportar
     let registrosActuales = [];
+    let historialRegistrosActuales = [];
 
-    // 1. ESCUCHAR/DESCARGAR EL MAESTRO DESDE FIREBASE
+    // 1. ESCUCHAR MAESTRO DESDE FIREBASE
     onValue(maestroRef, (snapshot) => {
       const data = snapshot.val();
       const statusEl = document.getElementById("excel-status");
@@ -186,7 +231,7 @@
       }
     });
 
-    // 2. LECTURA Y SUBIDA DEL ARCHIVO EXCEL (BORRA Y ACTUALIZA MAESTRO)
+    // 2. LECTURA Y SUBIDA DEL ARCHIVO EXCEL
     document.getElementById("excel-file").addEventListener("change", function(e) {
       const file = e.target.files[0];
       if (!file) return;
@@ -203,22 +248,18 @@
         let conteo = 0;
 
         json.forEach(row => {
-          // Búsqueda flexible de encabezados: "Código Producto", "Caja" y "Descripción"
           const codigoKey = Object.keys(row).find(k => k.trim().toLowerCase() === "código producto" || k.trim().toLowerCase() === "codigo producto");
           const cajaKey = Object.keys(row).find(k => k.trim().toLowerCase() === "caja");
           const descKey = Object.keys(row).find(k => k.trim().toLowerCase() === "descripción" || k.trim().toLowerCase() === "descripcion");
 
           if (codigoKey && cajaKey) {
             const codOriginal = String(row[codigoKey]).trim().toUpperCase();
-            const codClave = codOriginal.replace(/[.$#\[\]\/]/g, "_"); // Limpieza de caracteres no válidos para Firebase
+            const codClave = codOriginal.replace(/[.$#\[\]\/]/g, "_");
             const caja = String(row[cajaKey]).trim();
             const descripcion = descKey ? String(row[descKey]).trim() : "Sin descripción";
 
             if (codClave) {
-              nuevoMaestro[codClave] = {
-                caja: caja,
-                descripcion: descripcion
-              };
+              nuevoMaestro[codClave] = { caja: caja, descripcion: descripcion };
               conteo++;
             }
           }
@@ -230,14 +271,9 @@
           statusEl.textContent = "Subiendo base de datos...";
           statusEl.className = "text-xs mt-2 font-medium text-blue-600";
 
-          // Sobreescribe/Reemplaza el nodo del maestro en Firebase
           set(maestroRef, nuevoMaestro)
-            .then(() => {
-              alert(`¡Base de datos actualizada! Se han reemplazado los datos con ${conteo} productos.`);
-            })
-            .catch((err) => {
-              alert("Error al actualizar la base de datos: " + err.message);
-            });
+            .then(() => alert(`¡Base de datos actualizada! Se han reemplazado los datos con ${conteo} productos.`))
+            .catch((err) => alert("Error al actualizar la base de datos: " + err.message));
         } else {
           statusEl.textContent = "⚠️ No se encontraron las columnas requeridas ('Código Producto' y 'Caja').";
           statusEl.className = "text-xs mt-2 font-medium text-red-600";
@@ -252,7 +288,6 @@
     const descripcionInput = document.getElementById("descripcion-input");
 
     codigoInput.addEventListener("input", function() {
-      // Filtrar strictly cualquier carácter que no sea número al escribir o pegar
       this.value = this.value.replace(/[^0-9]/g, '');
 
       const valOriginal = this.value.trim().toUpperCase();
@@ -299,7 +334,7 @@
         .catch(err => alert("Error al guardar en Firebase: " + err.message));
     });
 
-    // 5. MOSTRAR REGISTROS EN TIEMPO REAL
+    // 5. MOSTRAR REGISTROS ACTUALES EN TIEMPO REAL
     onValue(caducadosRef, (snapshot) => {
       const tbody = document.getElementById("tabla-registros");
       const totalEl = document.getElementById("total-registros");
@@ -315,16 +350,14 @@
         return;
       }
 
-      // Convertimos el objeto en array incluyendo la clave única de Firebase (id)
       const listaConKeys = Object.keys(data).map(key => ({
         id: key,
         ...data[key]
       }));
 
       registrosActuales = listaConKeys;
-      const listaVisual = [...registrosActuales].reverse(); // Orden inverso para ver primero el último ingresado
+      const listaVisual = [...registrosActuales].reverse();
       
-      // Cálculo dinámico de total de registros y unidades
       const totalUnidades = registrosActuales.reduce((acc, curr) => acc + (Number(curr.cantidad) || 0), 0);
       totalEl.textContent = `${registrosActuales.length} registros`;
       unidadesEl.textContent = `${totalUnidades} unidades.`;
@@ -348,13 +381,12 @@
         tbody.appendChild(tr);
       });
 
-      // Event listener para eliminar un único registro
       document.querySelectorAll(".btn-eliminar-item").forEach(btn => {
         btn.addEventListener("click", function() {
           const itemKey = this.getAttribute("data-id");
           const clave = prompt("Ingresa la clave para eliminar este registro:");
           
-          if (clave === null) return; // Si cancela la ventana
+          if (clave === null) return;
           
           if (clave === CLAVE_ELIMINAR) {
             const itemRef = ref(db, `caducados_picking/${itemKey}`);
@@ -366,18 +398,16 @@
         });
       });
 
-      // NUEVO: Re-aplicar el filtro en caso de que la tabla se actualice mientras se busca algo
       aplicarFiltroBuscador();
     });
 
-    // 6. DESCARGAR REGISTROS A EXCEL
+    // 6. DESCARGAR REGISTROS ACTUALES A EXCEL
     document.getElementById("btn-exportar").addEventListener("click", function() {
       if (registrosActuales.length === 0) {
         alert("No hay registros para descargar.");
         return;
       }
 
-      // Dar formato limpio a las columnas del archivo descargado (excluyendo el ID de Firebase)
       const dataExportar = registrosActuales.map(r => ({
         "Fecha y Hora": r.fechaHora,
         "Código": r.codigo,
@@ -391,12 +421,11 @@
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, "Productos Caducados");
 
-      // Nombre dinámico con fecha actual
       const fechaNombre = new Date().toISOString().slice(0,10);
       XLSX.writeFile(workbook, `Caducados_Picking_${fechaNombre}.xlsx`);
     });
 
-    // 7. LIMPIAR/BORRAR TODOS LOS REGISTROS EN FIREBASE
+    // 7. LIMPIAR/BORRAR REGISTROS ACTUALES (NO AFECTA AL HISTORIAL)
     document.getElementById("btn-limpiar").addEventListener("click", function() {
       if (registrosActuales.length === 0) {
         alert("No hay registros para borrar.");
@@ -405,7 +434,7 @@
 
       const clave = prompt("⚠️ Ingresa la clave para borrar TODOS los registros acumulados:");
       
-      if (clave === null) return; // Si cancela la ventana
+      if (clave === null) return;
 
       if (clave === CLAVE_ELIMINAR) {
         remove(caducadosRef)
@@ -416,23 +445,19 @@
       }
     });
 
-    // 8. NUEVO: LÓGICA DEL BUSCADOR EN LA TABLA
+    // 8. BUSCADOR EN LA TABLA DE REGISTROS ACTUALES
     const inputBuscador = document.getElementById("buscador-codigo");
     
     function aplicarFiltroBuscador() {
-      // Filtrar strictly cualquier carácter que no sea número al escribir o pegar
       inputBuscador.value = inputBuscador.value.replace(/[^0-9]/g, '');
 
       const filtro = inputBuscador.value.trim().toUpperCase();
       const filas = document.querySelectorAll("#tabla-registros tr");
 
       filas.forEach(fila => {
-        // Obtenemos la celda correspondiente a la columna 'Código' (índice 1)
         const celdaCodigo = fila.querySelectorAll("td")[1];
-        
         if (celdaCodigo) {
           const textoCodigo = celdaCodigo.textContent || celdaCodigo.innerText;
-          // Mostramos la fila si coincide el código, la ocultamos si no
           if (textoCodigo.toUpperCase().includes(filtro)) {
             fila.style.display = "";
           } else {
@@ -442,8 +467,123 @@
       });
     }
 
-    // Escuchar el evento de escritura para filtrar en tiempo real
     inputBuscador.addEventListener("input", aplicarFiltroBuscador);
+
+    // -------------------------------------------------------------
+    // FUNCIONES DE HISTORIAL INDIVIDUAL / DETALLADO
+    // -------------------------------------------------------------
+
+    // GUARDAR HISTORIAL INDIVIDUALIZADO
+    document.getElementById("btn-guardar-historial").addEventListener("click", function() {
+      if (registrosActuales.length === 0) {
+        alert("No hay registros actuales para guardar.");
+        return;
+      }
+
+      // Copiamos individualmente cada registro al historial con timestamp
+      const promesas = registrosActuales.map(item => {
+        const itemHistorial = {
+          codigo: item.codigo,
+          descripcion: item.descripcion,
+          caja: item.caja,
+          cantidad: item.cantidad,
+          detalles: item.detalles,
+          fechaHora: item.fechaHora || new Date().toLocaleString("es-EC")
+        };
+        return push(historialRef, itemHistorial);
+      });
+
+      Promise.all(promesas)
+        .then(() => alert("¡Se guardaron los registros!"))
+        .catch(err => alert("Error al guardar en el historial: " + err.message));
+    });
+
+    // MOSTRAR HISTORIAL REGISTRO POR REGISTRO EN TIEMPO REAL
+    onValue(historialRef, (snapshot) => {
+      const tbodyHistorial = document.getElementById("tabla-historial");
+      const totalHistorialItemsEl = document.getElementById("total-historial-items");
+      const totalHistorialUnidadesEl = document.getElementById("total-historial-unidades");
+      tbodyHistorial.innerHTML = "";
+
+      const data = snapshot.val();
+      if (!data) {
+        historialRegistrosActuales = [];
+        tbodyHistorial.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-gray-400">No hay registros.</td></tr>`;
+        totalHistorialItemsEl.textContent = "0 registros";
+        totalHistorialUnidadesEl.textContent = "0 unidades.";
+        return;
+      }
+
+      const listaHistorial = Object.keys(data).map(key => ({
+        id: key,
+        ...data[key]
+      }));
+
+      historialRegistrosActuales = listaHistorial;
+      const listaVisual = [...listaHistorial].reverse();
+
+      const totalUnidadesHistorial = listaHistorial.reduce((acc, curr) => acc + (Number(curr.cantidad) || 0), 0);
+      totalHistorialItemsEl.textContent = `${listaHistorial.length} registros en historial`;
+      totalHistorialUnidadesEl.textContent = `${totalUnidadesHistorial} unidades.`;
+
+      listaVisual.forEach(item => {
+        const tr = document.createElement("tr");
+        tr.className = "border-b hover:bg-gray-50";
+        tr.innerHTML = `
+          <td class="py-2 px-1.5 sm:px-2 text-xs text-gray-500">${item.fechaHora || '-'}</td>
+          <td class="py-2 px-1.5 sm:px-2 font-mono font-bold text-gray-800">${item.codigo}</td>
+          <td class="py-2 px-1.5 sm:px-2 text-gray-700 text-xs">${item.descripcion || '-'}</td>
+          <td class="py-2 px-1.5 sm:px-2 font-semibold text-gray-700">${item.caja}</td>
+          <td class="py-2 px-1.5 sm:px-2 text-center font-bold text-red-600">${item.cantidad}</td>
+          <td class="py-2 px-1.5 sm:px-2 text-gray-600 text-xs">${item.detalles}</td>
+        `;
+        tbodyHistorial.appendChild(tr);
+      });
+    });
+
+    // DESCARGAR EXCEL SOLO DEL HISTORIAL
+    document.getElementById("btn-exportar-historial").addEventListener("click", function() {
+      if (historialRegistrosActuales.length === 0) {
+        alert("No hay registros en el historial para descargar.");
+        return;
+      }
+
+      const dataExportar = historialRegistrosActuales.map(r => ({
+        "Fecha y Hora": r.fechaHora,
+        "Código": r.codigo,
+        "Nombre": r.descripcion,
+        "Ubicación": r.caja,
+        "Cantidad": r.cantidad,
+        "Observaciones": r.detalles
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(dataExportar);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Historial Caducados");
+
+      const fechaNombre = new Date().toISOString().slice(0,10);
+      XLSX.writeFile(workbook, `Historial_Caducados_Picking_${fechaNombre}.xlsx`);
+    });
+
+    // ELIMINAR HISTORIAL (NO AFECTA REGISTROS ACTUALES)
+    document.getElementById("btn-eliminar-historial").addEventListener("click", function() {
+      if (historialRegistrosActuales.length === 0) {
+        alert("No hay registros en el historial para borrar.");
+        return;
+      }
+
+      const clave = prompt("⚠️ Ingresa la clave para borrar TODO el historial acumulado:");
+      
+      if (clave === null) return;
+
+      if (clave === CLAVE_ELIMINAR) {
+        remove(historialRef)
+          .then(() => alert("Se ha eliminado todo el historial correctamente."))
+          .catch(err => alert("Error al borrar el historial: " + err.message));
+      } else {
+        alert("Clave incorrecta. No se borró el historial.");
+      }
+    });
 
   </script>
 </body>
