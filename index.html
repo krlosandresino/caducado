@@ -160,7 +160,8 @@
                class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm shadow-sm transition-shadow"/>
       </div>
 
-      <div class="overflow-x-auto">
+      <!-- Contenedor con Scroll Interno -->
+      <div class="overflow-x-auto overflow-y-auto max-h-[500px]">
         <table class="w-full text-xs sm:text-sm text-left text-gray-600 min-w-[600px] sm:min-w-full">
           <thead class="text-xs text-gray-700 uppercase bg-gray-100 border-b">
             <tr>
@@ -170,11 +171,12 @@
               <th class="py-2.5 sm:py-3 px-1.5 sm:px-2">Caja</th>
               <th class="py-2.5 sm:py-3 px-1.5 sm:px-2 text-center">Cant.</th>
               <th class="py-2.5 sm:py-3 px-1.5 sm:px-2">Detalles</th>
+              <th class="py-2.5 sm:py-3 px-1.5 sm:px-2 text-center">Acción</th>
             </tr>
           </thead>
           <tbody id="tabla-historial">
             <tr>
-              <td colspan="6" class="text-center py-6 text-gray-400">No hay registros.</td>
+              <td colspan="7" class="text-center py-6 text-gray-400">No hay registros.</td>
             </tr>
           </tbody>
         </table>
@@ -514,7 +516,7 @@
       const data = snapshot.val();
       if (!data) {
         historialRegistrosActuales = [];
-        tbodyHistorial.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-gray-400">No hay registros.</td></tr>`;
+        tbodyHistorial.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-gray-400">No hay registros.</td></tr>`;
         totalHistorialItemsEl.textContent = "0 registros";
         totalHistorialUnidadesEl.textContent = "0 unidades.";
         return;
@@ -542,8 +544,31 @@
           <td class="py-2 px-1.5 sm:px-2 font-semibold text-gray-700">${item.caja}</td>
           <td class="py-2 px-1.5 sm:px-2 text-center font-bold text-red-600">${item.cantidad}</td>
           <td class="py-2 px-1.5 sm:px-2 text-gray-600 text-xs">${item.detalles}</td>
+          <td class="py-2 px-1.5 sm:px-2 text-center">
+            <button data-id="${item.id}" class="btn-eliminar-historial-item text-red-500 hover:text-red-700 hover:bg-red-50 p-1 rounded transition" title="Eliminar este registro">
+              🗑️
+            </button>
+          </td>
         `;
         tbodyHistorial.appendChild(tr);
+      });
+
+      // Evento para los botones de eliminar del historial
+      document.querySelectorAll(".btn-eliminar-historial-item").forEach(btn => {
+        btn.addEventListener("click", function() {
+          const itemKey = this.getAttribute("data-id");
+          const clave = prompt("Ingresa la clave para eliminar este registro del historial:");
+          
+          if (clave === null) return;
+          
+          if (clave === CLAVE_ELIMINAR) {
+            const itemRef = ref(db, `historial_picking/${itemKey}`);
+            remove(itemRef)
+              .catch(err => alert("Error al eliminar el registro: " + err.message));
+          } else {
+            alert("Clave incorrecta. No se eliminó el registro.");
+          }
+        });
       });
 
       aplicarFiltroBuscadorHistorial();
