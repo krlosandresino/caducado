@@ -188,7 +188,8 @@
   <!-- Firebase Modular SDK Script -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getDatabase, ref, push, set, remove, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    // IMPORTADA LA FUNCIÓN update PARA LAS ACTUALIZACIONES DELTA
+    import { getDatabase, ref, push, set, remove, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
     // Configuración de Firebase
     const firebaseConfig = {
@@ -234,12 +235,12 @@
         statusEl.className = "text-xs mt-2 font-medium text-green-600";
       } else {
         maestroProductos = {};
-        statusEl.textContent = "⚠️ No hay base de datos cargado.";
+        statusEl.textContent = "⚠️ No hay base de datos cargada.";
         statusEl.className = "text-xs mt-2 font-medium text-yellow-600";
       }
     });
 
-    // 2. LECTURA Y SUBIDA DEL ARCHIVO EXCEL
+    // 2. LECTURA Y SUBIDA DEL ARCHIVO EXCEL (AHORA CON LÓGICA DELTA)
     document.getElementById("excel-file").addEventListener("change", function(e) {
       const file = e.target.files[0];
       if (!file) return;
@@ -252,8 +253,8 @@
         const sheet = workbook.Sheets[sheetName];
         
         const json = XLSX.utils.sheet_to_json(sheet, { defval: "" });
-        const nuevoMaestro = {};
-        let conteo = 0;
+        const updates = {};
+        let conteoActualizados = 0;
 
         json.forEach(row => {
           const codigoKey = Object.keys(row).find(k => k.trim().toLowerCase() === "código producto" || k.trim().toLowerCase() === "codigo producto");
@@ -267,24 +268,35 @@
             const descripcion = descKey ? String(row[descKey]).trim() : "Sin descripción";
 
             if (codClave) {
-              nuevoMaestro[codClave] = { caja: caja, descripcion: descripcion };
-              conteo++;
+              const actual = maestroProductos[codClave];
+              
+              // Lógica de Comparación:
+              if (!actual || actual.caja !== caja || actual.descripcion !== descripcion) {
+                updates[codClave] = { caja: caja, descripcion: descripcion };
+                conteoActualizados++;
+              }
             }
           }
         });
 
         const statusEl = document.getElementById("excel-status");
 
-        if (conteo > 0) {
-          statusEl.textContent = "Subiendo base de datos...";
+        if (conteoActualizados > 0) {
+          statusEl.textContent = `Subiendo ${conteoActualizados} actualizaciones...`;
           statusEl.className = "text-xs mt-2 font-medium text-blue-600";
 
-          set(maestroRef, nuevoMaestro)
-            .then(() => alert(`¡Base de datos actualizada! Se han reemplazado los datos con ${conteo} productos.`))
+          // update solo impacta las ramas que se hayan modificado
+          update(maestroRef, updates)
+            .then(() => alert(`¡Base de datos actualizada! Se modificaron/agregaron ${conteoActualizados} productos.`))
             .catch((err) => alert("Error al actualizar la base de datos: " + err.message));
         } else {
-          statusEl.textContent = "⚠️ No se encontraron las columnas requeridas ('Código Producto' y 'Caja').";
-          statusEl.className = "text-xs mt-2 font-medium text-red-600";
+          if (Object.keys(json).length > 0) {
+            statusEl.textContent = "✅ ¡Todo está al día! Ningún producto cambió.";
+            statusEl.className = "text-xs mt-2 font-medium text-green-600";
+          } else {
+            statusEl.textContent = "⚠️ No se encontraron las columnas requeridas ('Código Producto' y 'Caja').";
+            statusEl.className = "text-xs mt-2 font-medium text-red-600";
+          }
         }
       };
       reader.readAsArrayBuffer(file);
