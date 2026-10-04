@@ -13,6 +13,13 @@
 </head>
 <body class="bg-gray-100 min-h-screen p-2 sm:p-4 font-sans">
 
+  <!-- PANTALLA DE BLOQUEO DE ACTUALIZACIÓN -->
+  <div id="updateOverlay" class="fixed inset-0 bg-slate-900/95 backdrop-blur-sm z-[99999] hidden flex-col justify-center items-center text-center text-white pointer-events-auto">
+      <div class="w-16 h-16 border-[6px] border-white/10 border-t-blue-500 rounded-full animate-spin mb-5"></div>
+      <h2 class="text-2xl font-bold text-blue-400 m-0 tracking-wide">RECIBIENDO ACTUALIZACIONES</h2>
+      <p class="text-slate-400 text-base mt-2 max-w-[80%]">Por favor, espera un momento. El sistema se desbloqueará automáticamente.</p>
+  </div>
+
   <div class="max-w-6xl mx-auto space-y-4 sm:space-y-6">
     
     <!-- Encabezado -->
@@ -193,7 +200,6 @@
   <!-- Firebase Modular SDK Script -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    // IMPORTADA LA FUNCIÓN update PARA LAS ACTUALIZACIONES DELTA
     import { getDatabase, ref, push, set, remove, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
     // Configuración de Firebase
@@ -290,7 +296,6 @@
           statusEl.textContent = `Subiendo ${conteoActualizados} actualizaciones...`;
           statusEl.className = "text-xs mt-2 font-medium text-blue-600";
 
-          // update solo impacta las ramas que se hayan modificado
           update(maestroRef, updates)
             .then(() => alert(`¡Base de datos actualizada! Se modificaron/agregaron ${conteoActualizados} productos.`))
             .catch((err) => alert("Error al actualizar la base de datos: " + err.message));
@@ -656,6 +661,19 @@
           .catch(err => alert("Error al borrar el historial: " + err.message));
       } else {
         alert("Clave incorrecta. No se borró el historial.");
+      }
+    });
+
+    // --- Lógica de Pantalla de Bloqueo por Actualización ---
+    onValue(ref(db, "configuracion/estado_sistema"), (snapshot) => {
+      const data = snapshot.val();
+      const overlay = document.getElementById('updateOverlay');
+      if (data && data.actualizando === true) {
+        overlay.classList.remove('hidden');
+        overlay.classList.add('flex');
+      } else {
+        overlay.classList.add('hidden');
+        overlay.classList.remove('flex');
       }
     });
 
