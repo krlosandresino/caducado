@@ -665,15 +665,21 @@
     });
 
     // --- Lógica de Pantalla de Bloqueo por Actualización ---
+    let estabaActualizando = false;
     onValue(ref(db, "configuracion/estado_sistema"), (snapshot) => {
       const data = snapshot.val();
       const overlay = document.getElementById('updateOverlay');
       if (data && data.actualizando === true) {
         overlay.classList.remove('hidden');
         overlay.classList.add('flex');
+        estabaActualizando = true;
       } else {
-        overlay.classList.add('hidden');
-        overlay.classList.remove('flex');
+        if (estabaActualizando) {
+          window.location.reload();
+        } else {
+          overlay.classList.add('hidden');
+          overlay.classList.remove('flex');
+        }
       }
     });
 
